@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual Environment
+venv/
+env/
+
+# Data and Models
+data/
+models/*.pth
+*.pt
+
+# IDE
+.idea/
+.vscode/
+
+# Test coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# Logs
+*.log 

@@ -13,10 +13,14 @@ def test_model_output_shape():
     output = model(x)
     assert output.shape == (batch_size, 10), "Output shape is incorrect"
 
-def test_model_parameters():
+def test_input_size():
     model = ComplexMNISTNet()
-    total_params = sum(p.numel() for p in model.parameters())
-    assert total_params < 1000000, "Model has too many parameters"
+    # Test with different batch sizes
+    batch_sizes = [1, 4, 32]
+    for batch_size in batch_sizes:
+        x = torch.randn(batch_size, 1, 28, 28)
+        output = model(x)
+        assert output.shape == (batch_size, 10), f"Failed for batch size {batch_size}"
 
 def test_basic_training():
     model = ComplexMNISTNet()

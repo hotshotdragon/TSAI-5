@@ -16,11 +16,20 @@ def test_model_output_shape():
 def test_input_size():
     model = ComplexMNISTNet()
     # Test with different batch sizes
-    batch_sizes = [1, 4, 32]
+    batch_sizes = [4, 8, 32]
     for batch_size in batch_sizes:
         x = torch.randn(batch_size, 1, 28, 28)
         output = model(x)
         assert output.shape == (batch_size, 10), f"Failed for batch size {batch_size}"
+
+def test_inference_mode():
+    model = ComplexMNISTNet()
+    model.eval()
+    # Now we can test with batch_size=1
+    x = torch.randn(1, 1, 28, 28)
+    with torch.no_grad():
+        output = model(x)
+    assert output.shape == (1, 10), "Failed for single sample inference"
 
 def test_basic_training():
     model = ComplexMNISTNet()

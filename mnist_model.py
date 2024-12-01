@@ -5,6 +5,8 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 from torchvision.utils import save_image

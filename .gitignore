@@ -23,3 +23,7 @@ htmlcov/
 
 # Logs
 *.log 
+
+# Image Augmentation
+augmented_samples/
+*.png 

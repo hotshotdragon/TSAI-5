@@ -27,7 +27,7 @@ jobs:
       run: |
         pytest test_model.py -v --cov=.
         
-    - name: Quick training test
+    - name: Train model and generate augmentations
       run: |
         python train.py
         
@@ -37,10 +37,10 @@ jobs:
         name: trained-model
         path: models/
         retention-days: 5
-
-    - name: Upload test coverage
+        
+    - name: Upload augmentation samples
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report
-        path: htmlcov/
+        name: augmentation-samples
+        path: visualization/
         retention-days: 5

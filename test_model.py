@@ -1,38 +1,36 @@
 import torch
 import pytest
-from mnist_model import ComplexMNISTNet
+from mnist_model import SimpleMNIST
+from torchvision import transforms, datasets
+import os
 
 @pytest.fixture
 def model():
-    return ComplexMNISTNet()
+    return SimpleMNIST()
 
 def test_model_output_shape():
-    model = ComplexMNISTNet()
+    model = SimpleMNIST()
     batch_size = 4
     x = torch.randn(batch_size, 1, 28, 28)
     output = model(x)
     assert output.shape == (batch_size, 10), "Output shape is incorrect"
 
+def test_parameter_count():
+    """Test that model has less than 25000 parameters"""
+    model = SimpleMNIST()
+    total_params = sum(p.numel() for p in model.parameters())
+    assert total_params < 25000, f"Model has {total_params} parameters, should be less than 25000"
+
 def test_input_size():
-    model = ComplexMNISTNet()
-    # Test with different batch sizes
+    model = SimpleMNIST()
     batch_sizes = [4, 8, 32]
     for batch_size in batch_sizes:
         x = torch.randn(batch_size, 1, 28, 28)
         output = model(x)
         assert output.shape == (batch_size, 10), f"Failed for batch size {batch_size}"
 
-def test_inference_mode():
-    model = ComplexMNISTNet()
-    model.eval()
-    # Now we can test with batch_size=1
-    x = torch.randn(1, 1, 28, 28)
-    with torch.no_grad():
-        output = model(x)
-    assert output.shape == (1, 10), "Failed for single sample inference"
-
 def test_basic_training():
-    model = ComplexMNISTNet()
+    model = SimpleMNIST()
     x = torch.randn(32, 1, 28, 28)
     y = torch.randint(0, 10, (32,))
     
@@ -46,87 +44,77 @@ def test_basic_training():
     
     assert not torch.isnan(loss), "Training step produced NaN loss"
 
-def test_model_gradient_flow():
-    """Test if gradients are flowing properly through the model"""
-    model = ComplexMNISTNet()
-    x = torch.randn(4, 1, 28, 28)
-    y = torch.randint(0, 10, (4,))
+def test_model_training_accuracy():
+    """Test model achieves >95% training accuracy in one epoch"""
+    model = SimpleMNIST()
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
     
-    optimizer = torch.optim.Adam(model.parameters())
+    # Load a small subset of training data
+    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+    subset_size = 1000  # Use smaller subset for quick testing
+    indices = torch.randperm(len(train_dataset))[:subset_size]
+    subset = torch.utils.data.Subset(train_dataset, indices)
+    train_loader = torch.utils.data.DataLoader(subset, batch_size=64)
+    
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
     
-    # Initial backward pass
-    output = model(x)
-    loss = criterion(output, y)
-    loss.backward()
+    model.train()
+    correct = 0
+    total = 0
     
-    # Check if gradients exist and are not zero
-    has_grad = False
-    has_non_zero_grad = False
-    
-    for param in model.parameters():
-        if param.requires_grad and param.grad is not None:
-            has_grad = True
-            if torch.sum(torch.abs(param.grad)) > 0:
-                has_non_zero_grad = True
-                break
-    
-    assert has_grad and has_non_zero_grad, "Model gradients are not flowing properly"
-
-def test_model_overfitting_single_batch():
-    """Test if model can overfit to a single batch (sanity check)"""
-    model = ComplexMNISTNet()
-    x = torch.randn(4, 1, 28, 28)
-    y = torch.randint(0, 10, (4,))
-    
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    criterion = torch.nn.CrossEntropyLoss()
-    
-    # Try to overfit
-    initial_loss = None
-    final_loss = None
-    
-    for _ in range(10):
+    for data, target in train_loader:
         optimizer.zero_grad()
-        output = model(x)
-        loss = criterion(output, y)
-        if initial_loss is None:
-            initial_loss = loss.item()
+        output = model(data)
+        loss = criterion(output, target)
         loss.backward()
         optimizer.step()
-        final_loss = loss.item()
+        
+        pred = output.argmax(dim=1, keepdim=True)
+        correct += pred.eq(target.view_as(pred)).sum().item()
+        total += len(data)
     
-    assert final_loss < initial_loss, "Model is not able to overfit to a single batch"
+    accuracy = 100. * correct / total
+    assert accuracy > 95.0, f"Model achieved only {accuracy:.2f}% accuracy"
 
-def test_model_batch_norm_behavior():
-    """Test if BatchNorm layers behave differently in train and eval modes"""
-    model = ComplexMNISTNet()
-    x = torch.randn(4, 1, 28, 28)
+def test_augmentation_consistency():
+    """Test that augmentations maintain digit recognizability"""
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.RandomRotation(10),
+        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
     
-    # Training mode
-    model.train()
-    out_train = model(x)
+    # Load single image
+    dataset = datasets.MNIST('./data', train=True, download=True)
+    original_image = dataset.data[0].numpy()
     
-    # Eval mode
-    model.eval()
-    out_eval = model(x)
+    # Apply transform multiple times
+    augmented_images = [transform(original_image) for _ in range(5)]
     
-    # Outputs should be different due to BatchNorm behavior
-    assert not torch.allclose(out_train, out_eval), "BatchNorm layers are not functioning properly"
+    # Check that augmented images maintain basic statistics
+    for aug_img in augmented_images:
+        assert aug_img.shape == (1, 28, 28), "Augmentation changed image dimensions"
+        assert aug_img.min() >= -1 and aug_img.max() <= 1, "Augmentation produced invalid pixel values"
 
-def test_model_activation_ranges():
-    """Test if activations are in reasonable ranges"""
-    model = ComplexMNISTNet()
-    x = torch.randn(4, 1, 28, 28)
-    
+def test_model_inference_time():
+    """Test that model inference is reasonably fast"""
+    model = SimpleMNIST()
     model.eval()
+    x = torch.randn(1, 1, 28, 28)
+    
+    start_time = torch.cuda.Event(enable_timing=True)
+    end_time = torch.cuda.Event(enable_timing=True)
+    
     with torch.no_grad():
-        output = model(x)
+        start_time.record()
+        _ = model(x)
+        end_time.record()
+        torch.cuda.synchronize()
     
-    # Log softmax output should be negative
-    assert torch.all(output <= 0), "Log softmax outputs are not all negative"
-    
-    # Probabilities (exp of log softmax) should sum to 1
-    probs = torch.exp(output)
-    sums = torch.sum(probs, dim=1)
-    assert torch.allclose(sums, torch.ones_like(sums)), "Probabilities don't sum to 1" 
+    inference_time = start_time.elapsed_time(end_time)
+    assert inference_time < 100, f"Inference too slow: {inference_time}ms"

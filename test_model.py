@@ -8,6 +8,7 @@ from model.network import SimpleCNN
 from torchvision import transforms, datasets
 import os
 import time
+from tqdm import tqdm
 
 @pytest.fixture
 def model():

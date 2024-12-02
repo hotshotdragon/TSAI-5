@@ -67,20 +67,20 @@ def test_model_training_accuracy():
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    # Load a small subset of training data
+    # Load a larger subset of training data
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    subset_size = 1000  # Small subset for quick testing
+    subset_size = 5000  # Increased subset size
     indices = torch.randperm(len(train_dataset))[:subset_size]
     subset = torch.utils.data.Subset(train_dataset, indices)
-    train_loader = torch.utils.data.DataLoader(subset, batch_size=64)
+    train_loader = torch.utils.data.DataLoader(subset, batch_size=128)  # Increased batch size
     
-    # Train for multiple epochs on small subset
+    # Train for multiple epochs on subset
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
     
     model.train()
-    # Train for a few epochs on the small subset
-    for epoch in range(3):  # Train for 3 epochs
+    # Train for more epochs
+    for epoch in range(5):  # Increased to 5 epochs
         correct = 0
         total = 0
         
@@ -96,4 +96,4 @@ def test_model_training_accuracy():
             total += len(data)
     
     accuracy = 100. * correct / total
-    assert accuracy > 50.0, f"Model achieved only {accuracy:.2f}% accuracy"  # Lower threshold for quick test
+    assert accuracy > 60.0, f"Model achieved only {accuracy:.2f}% accuracy"  # Adjusted threshold

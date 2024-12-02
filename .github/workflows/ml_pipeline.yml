@@ -21,26 +21,28 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r TSAI_5/requirements.txt
         
     - name: Run tests
       run: |
+        cd TSAI_5
         pytest test_model.py -v --cov=.
         
     - name: Train model and generate augmentations
       run: |
+        cd TSAI_5
         python train.py
         
     - name: Upload trained model
       uses: actions/upload-artifact@v4
       with:
         name: trained-model
-        path: models/
+        path: TSAI_5/models/
         retention-days: 5
         
     - name: Upload augmentation samples
       uses: actions/upload-artifact@v4
       with:
         name: augmentation-samples
-        path: visualization/
+        path: TSAI_5/visualization/
         retention-days: 5

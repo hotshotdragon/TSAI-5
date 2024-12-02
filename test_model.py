@@ -88,7 +88,7 @@ def test_model_training_accuracy():
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1000, shuffle=False)
     
     # Initialize model
-    model = SimpleCNN().to(device)
+    model = SimpleCNN()
     criterion = nn.CrossEntropyLoss()
     # Increased learning rate further
     optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)
@@ -104,7 +104,7 @@ def test_model_training_accuracy():
         pbar = tqdm(train_loader, desc=f'Epoch {epoch+1}/{num_epochs}')
         
         for batch_idx, (data, target) in enumerate(pbar):
-            data, target = data.to(device), target.to(device)
+            data, target = data, target
             optimizer.zero_grad()
             output = model(data)
             loss = criterion(output, target)
@@ -115,8 +115,8 @@ def test_model_training_accuracy():
             pbar.set_postfix({'loss': f'{running_loss:.4f}'})
         
         # Evaluate after each epoch
-        train_accuracy = evaluate(model, device, train_loader)
-        test_accuracy = evaluate(model, device, test_loader)
+        train_accuracy = evaluate(model, train_loader)
+        test_accuracy = evaluate(model,test_loader)
         print(f"\nEpoch {epoch+1}")
         print(f"Training Accuracy: {train_accuracy:.2f}%")
         print(f"Test Accuracy: {test_accuracy:.2f}%")
@@ -127,6 +127,6 @@ def test_model_training_accuracy():
             break
     
     # Final evaluation
-    final_accuracy = evaluate(model, device, test_loader)
+    final_accuracy = evaluate(model,test_loader)
     print(f"\nFinal Test Accuracy: {final_accuracy:.2f}%")
     assert final_accuracy > 60.0, f"Model achieved only {accuracy:.2f}% accuracy"  # Adjusted threshold

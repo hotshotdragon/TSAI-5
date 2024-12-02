@@ -30,24 +30,22 @@ jobs:
         
     - name: Run tests
       run: |
-        cd TSAI_5
         pytest test_model.py -v --cov=.
         
     - name: Train model and generate augmentations
       run: |
-        cd TSAI_5
         python train.py
         
     - name: Upload trained model
       uses: actions/upload-artifact@v4
       with:
         name: trained-model
-        path: TSAI_5/models/
+        path: models/
         retention-days: 5
         
     - name: Upload augmentation samples
       uses: actions/upload-artifact@v4
       with:
         name: augmentation-samples
-        path: TSAI_5/visualization/
+        path: visualization/
         retention-days: 5

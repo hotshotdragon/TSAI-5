@@ -1,15 +1,16 @@
 import torch
 import pytest
-from mnist_model import SimpleMNIST
+from model.network import SimpleCNN
 from torchvision import transforms, datasets
 import os
+import time
 
 @pytest.fixture
 def model():
-    return SimpleMNIST()
+    return SimpleCNN()
 
 def test_model_output_shape():
-    model = SimpleMNIST()
+    model = SimpleCNN()
     batch_size = 4
     x = torch.randn(batch_size, 1, 28, 28)
     output = model(x)
@@ -17,12 +18,12 @@ def test_model_output_shape():
 
 def test_parameter_count():
     """Test that model has less than 25000 parameters"""
-    model = SimpleMNIST()
+    model = SimpleCNN()
     total_params = sum(p.numel() for p in model.parameters())
     assert total_params < 25000, f"Model has {total_params} parameters, should be less than 25000"
 
 def test_input_size():
-    model = SimpleMNIST()
+    model = SimpleCNN()
     batch_sizes = [4, 8, 32]
     for batch_size in batch_sizes:
         x = torch.randn(batch_size, 1, 28, 28)
@@ -30,7 +31,7 @@ def test_input_size():
         assert output.shape == (batch_size, 10), f"Failed for batch size {batch_size}"
 
 def test_basic_training():
-    model = SimpleMNIST()
+    model = SimpleCNN()
     x = torch.randn(32, 1, 28, 28)
     y = torch.randint(0, 10, (32,))
     
@@ -46,13 +47,12 @@ def test_basic_training():
 
 def test_model_training_accuracy():
     """Test model achieves >95% training accuracy in one epoch"""
-    model = SimpleMNIST()
+    model = SimpleCNN()
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    # Load a small subset of training data
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
     subset_size = 1000  # Use smaller subset for quick testing
     indices = torch.randperm(len(train_dataset))[:subset_size]
@@ -89,32 +89,25 @@ def test_augmentation_consistency():
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    # Load single image
     dataset = datasets.MNIST('./data', train=True, download=True)
     original_image = dataset.data[0].numpy()
     
-    # Apply transform multiple times
     augmented_images = [transform(original_image) for _ in range(5)]
     
-    # Check that augmented images maintain basic statistics
     for aug_img in augmented_images:
         assert aug_img.shape == (1, 28, 28), "Augmentation changed image dimensions"
         assert aug_img.min() >= -1 and aug_img.max() <= 1, "Augmentation produced invalid pixel values"
 
 def test_model_inference_time():
     """Test that model inference is reasonably fast"""
-    model = SimpleMNIST()
+    model = SimpleCNN()
     model.eval()
     x = torch.randn(1, 1, 28, 28)
     
-    start_time = torch.cuda.Event(enable_timing=True)
-    end_time = torch.cuda.Event(enable_timing=True)
-    
     with torch.no_grad():
-        start_time.record()
+        start_time = time.time()
         _ = model(x)
-        end_time.record()
-        torch.cuda.synchronize()
+        end_time = time.time()
     
-    inference_time = start_time.elapsed_time(end_time)
-    assert inference_time < 100, f"Inference too slow: {inference_time}ms"
+    inference_time = (end_time - start_time) * 1000  # Convert to milliseconds
+    assert inference_time < 100, f"Inference too slow: {inference_time:.2f}ms"

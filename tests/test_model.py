@@ -1,12 +1,8 @@
 import torch
 import pytest
-from torchvision import transforms, datasets
 from model.network import SimpleCNN
+from torchvision import transforms, datasets
 import os
-import glob
-import numpy as np
-import psutil
-import gc
 import time
 
 def count_parameters(model):

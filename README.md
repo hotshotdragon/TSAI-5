@@ -1,6 +1,6 @@
 # MNIST Model Training Pipeline
 
-[![ML Pipeline](https://github.com/hotshotdragon/TSAI_5/actions/workflows/ml_pipeline.yml/badge.svg)](https://github.com/hotshotdragon/TSAI_5/actions/workflows/ml_pipeline.yml)
+[![Build Status](https://github.com/hotshotdragon/TSAI_5/actions/workflows/ml_pipeline.yml/badge.svg)](https://github.com/hotshotdragon/TSAI_5/actions/workflows/ml_pipeline.yml)
 
 This project implements a CNN model for MNIST digit classification with complete CI/CD pipeline. The model achieves >95% accuracy in one epoch while maintaining less than 25,000 parameters.
 

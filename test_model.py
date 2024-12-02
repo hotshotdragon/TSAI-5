@@ -1,4 +1,8 @@
 import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
+import torchvision.utils as vutils
 import pytest
 from model.network import SimpleCNN
 from torchvision import transforms, datasets

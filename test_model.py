@@ -65,6 +65,21 @@ def test_model_inference_time():
     assert inference_time < 100, f"Inference too slow: {inference_time:.2f}ms"
 
 def test_model_training_accuracy():
+
+    def evaluate(model, test_loader):
+        model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for data, target in test_loader:
+                data, target = data, target
+                outputs = model(data)
+                _, predicted = torch.max(outputs.data, 1)
+                total += target.size(0)
+                correct += (predicted == target).sum().item()
+        
+        accuracy = 100 * correct / total
+        return accuracy
     """Test model achieves reasonable accuracy in quick test"""
     # Reduced augmentations to help achieve higher training accuracy faster
     train_transform = transforms.Compose([
